@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Cell Saving Resources</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c0001a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CSR Form">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:#c0001a; --dark:#0d0d0d; --surface:#f5f3f0;
+  --card:#fff; --border:#d0ccc8; --text:#1a1a1a; --muted:#6b6b6b; --green:#1a6b3a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--surface);color:var(--text);padding-bottom:40px;}
+header{background:var(--dark);color:#fff;padding:16px 20px 12px;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--red);}
+header h1{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--red);}
+header p{font-size:11px;color:#aaa;margin-top:2px;}
+.prog{height:3px;background:#333;margin-top:10px;border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--red);border-radius:2px;transition:width .4s;width:0%;}
+.tabs{display:flex;background:#1a1a1a;border-bottom:1px solid #333;}
+.tab{flex:1;padding:10px 4px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#888;cursor:pointer;border-bottom:2px solid transparent;}
+.tab.active{color:var(--red);border-bottom-color:var(--red);}
+.pane{display:none;} .pane.active{display:block;}
+.wrap{max-width:600px;margin:0 auto;padding:16px;}
+.card{background:var(--card);border-radius:10px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid var(--border);}
+.card-head{background:var(--dark);color:#fff;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;}
+.card-body{padding:14px 16px;display:grid;gap:12px;}
+.g2{grid-template-columns:1fr 1fr;gap:10px;}
+.g3{grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+input[type=text],input[type=date],input[type=time],input[type=number],textarea{
+  border:1.5px solid var(--border);border-radius:6px;padding:9px 11px;font-size:15px;
+  font-family:'IBM Plex Sans',sans-serif;color:var(--text);background:#fafaf8;width:100%;
+  transition:border-color .2s;-webkit-appearance:none;}
+input:focus,textarea:focus{outline:none;border-color:var(--red);background:#fff;}
+textarea{resize:vertical;min-height:60px;font-size:14px;}
+.gbtn-group{display:flex;gap:8px;}
+.gbtn{flex:1;padding:9px 6px;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8;
+  font-size:13px;font-weight:600;font-family:'IBM Plex Mono',monospace;cursor:pointer;text-align:center;color:var(--muted);}
+.gbtn.active{border-color:var(--red);background:var(--red);color:#fff;}
+.vrow{display:grid;grid-template-columns:1fr auto 90px;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0ede9;}
+.vrow:last-child{border-bottom:none;}
+.vlbl{font-size:12px;font-weight:600;}
+.vlbl.red{color:var(--red);}
+.vunit{font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+.vinput{text-align:right;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;}
+.vinput.calc{background:#f0f8f4;border-color:#c0ddc8;color:var(--green);}
+.divline{border:none;border-top:2px solid var(--dark);margin:4px 0;}
+.cbox{display:flex;align-items:center;gap:10px;padding:6px 0;}
+.cbox input[type=checkbox]{width:20px;height:20px;accent-color:var(--red);cursor:pointer;flex-shrink:0;}
+.cbox label{font-size:13px;text-transform:none;letter-spacing:0;font-family:'IBM Plex Sans',sans-serif;font-weight:500;color:var(--text);cursor:pointer;}
+.ttotal{background:#f0f0ee;border-radius:6px;padding:9px 11px;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#2a2a2a;border:1.5px solid var(--border);}
+.mini-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:.1em;}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:13px;font-family:'IBM Plex Mono',monospace;cursor:pointer;margin-top:6px;letter-spacing:.08em;}
+.btn-red{background:var(--red);color:#fff;font-size:14px;text-transform:uppercase;letter-spacing:.1em;}
+.btn-grn{background:var(--green);color:#fff;}
+.btn-blu{background:#1a3a6b;color:#fff;}
+.btn-blk{background:var(--dark);color:#fff;}
+.btn-out{background:transparent;color:var(--muted);border:1.5px solid var(--border);}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:600px;max-height:88vh;overflow-y:auto;padding:24px 20px 40px;animation:up .3s ease;}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h2{font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;color:var(--red);}
+.modal .cid{font-size:12px;color:var(--muted);margin-bottom:16px;font-family:'IBM Plex Mono',monospace;}
+.srow{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid #f0ede9;font-size:14px;}
+.srow .sl{color:var(--muted);font-size:12px;}
+.srow .sv{font-weight:600;font-family:'IBM Plex Mono',monospace;}
+.srow .sv.red{color:var(--red);}
+.hempty{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
+.hcard{background:#fff;border-radius:10px;margin-bottom:12px;border:1px solid var(--border);overflow:hidden;}
+.hcard-head{padding:11px 16px;background:#fafaf8;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.hcard-id{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--red);}
+.hcard-date{font-size:12px;color:var(--muted);}
+.hcard-body{padding:12px 16px;}
+.hr{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;}
+.hr .hl{color:var(--muted);} .hr .hv{font-weight:600;font-family:'IBM Plex Mono',monospace;}
+.hcard-foot{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);background:#fafaf8;}
+.hbtn{flex:1;padding:8px;border-radius:6px;border:1.5px solid var(--border);background:#fff;font-size:11px;font-family:'IBM Plex Mono',monospace;cursor:pointer;text-align:center;color:#2a2a2a;}
+.hbtn.del{color:var(--red);border-color:#f0c0c0;}
+.sset{background:#fff;border-radius:10px;margin-bottom:14px;border:1px solid var(--border);overflow:hidden;}
+.srow2{padding:14px 16px;border-bottom:1px solid var(--border);}
+.srow2:last-child{border-bottom:none;}
+.srow2 > .lbl2{display:block;font-size:10px;font-weight:600;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+.hint{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.7;}
+.code{font-size:10px;background:#f0f0ee;padding:10px;border-radius:6px;display:block;margin-top:8px;line-height:1.6;font-family:'IBM Plex Mono',monospace;color:#333;white-space:pre-wrap;border:1px solid #ddd;word-break:break-word;}
+.sbadge{display:inline-flex;align-items:center;gap:6px;font-size:13px;}
+.sdot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;}
+.sdot.ok{background:var(--green);}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-family:'IBM Plex Mono',monospace;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cell Saving Resources</h1>
+  <p>Blood Processing Form · M25B</p>
+  <div class="prog"><div class="prog-fill" id="progFill"></div></div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('form')">📋 Form</div>
+  <div class="tab" onclick="switchTab('history')">🗂 History</div>
+  <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
+</div>
+
+<!-- FORM -->
+<div class="pane active" id="pane-form">
+<div class="wrap">
+
+  <div class="card">
+    <div class="card-head"><span class="dot"></span>Case Information</div>
+    <div class="card-body">
+      <div class="g2">
+        <div class="field"><label class="lbl">Date</label><input type="date" id="f-date"></div>
+        <div class="field"><label class="lbl">Theatre</label><input type="text" id="f-theatre" placeholder="e.g. 2"></div>
+      </div>
+      <div class="field"><label class="lbl">Hospital</label><input type="text" id="f-hospital" placeholder="Hospital name"></div>
+      <div class="field"><label class="lbl">Operator</label><input type="text" id="f-operator" placeholder="Perfusionist name"></div>
+      <div class="field"><label class="lbl">Surgeon</label><input type="text" id="f-surgeon" placeholder="Mr / Dr ..."></div>
+      <div class="field"><label class="lbl">Anaesthetist</label><input type="text" id="f-anaesthetist" placeholder="Dr ..."></div>
+      <div class="field"><label class="lbl">Procedure</label><input type="text" id="f-procedure" placeholder="Procedure description"></div>
+      <div class="field"><label class="lbl">Allergy</label><input type="text" id="f-allergy" placeholder="e.g. No allergies"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="dot"></span>Patient</div>
+    <div class="card-body">
+      <div class="g2">
+        <div class="field"><label class="lbl">Age</label><input type="number" id="f-age" placeholder="yrs" min="0" max="120"></div>
+        <div class="field"><label class="lbl">Weight (kg)</label><input type="number" id="f-weight" placeholder="kg"></div>
+      </div>
+      <div class="field">
+        <label class="lbl">Gender</label>
+        <div class="gbtn-group">
+          <button class="gbtn" onclick="setGender('M')">M</button>
+          <button class="gbtn" onclick="setGender('F')">F</button>
+          <button class="gbtn" onclick="setGender('Other')">Other</button>
+        </div>
+        <input type="hidden" id="f-gender" value="">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="dot"></span>Timing</div>
+    <div class="card-body g3">
+      <div class="field"><label class="lbl">Start</label><input type="time" id="f-start" oninput="calcTime()"></div>
+      <div class="field"><label class="lbl">Finish</label><input type="time" id="f-finish" oninput="calcTime()"></div>
+      <div class="field"><label class="lbl">Total</label><div class="ttotal" id="f-total">—</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="dot"></span>Equipment</div>
+    <div class="card-body">
+      <div class="g2">
+        <div class="field"><label class="lbl">Cellsaver Type</label><input type="text" id="f-cstype" placeholder="e.g. Elite+"></div>
+        <div class="field"><label class="lbl">Machine No.</label><input type="text" id="f-machno"></div>
+      </div>
+      <div class="field"><label class="lbl">Anticoagulant</label><input type="text" id="f-anticoag" placeholder="e.g. ACD-A"></div>
+      <div class="g2">
+        <div class="field"><label class="lbl">Preop HB (g/L)</label><input type="number" id="f-preopHB"></div>
+        <div class="field"><label class="lbl">Intraop HB (g/L)</label><input type="number" id="f-intraopHB"></div>
+      </div>
+      <div class="field"><label class="lbl">Blood Filter</label><input type="text" id="f-filter" placeholder="e.g. X1"></div>
+      <div class="cbox">
+        <input type="checkbox" id="f-notret">
+        <label for="f-notret">Salvaged Blood NOT returned</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="dot"></span>Blood Processing Record (mls)</div>
+    <div class="card-body">
+      <div class="vrow"><span class="vlbl">Volume Collected</span><span class="vunit">mls</span><input type="number" class="vinput" id="f-vcoll" placeholder="0" oninput="calcVol()"></div>
+      <div class="vrow"><span class="vlbl">Less Anticoagulant</span><span class="vunit">mls</span><input type="number" class="vinput" id="f-vanticoag" placeholder="0" oninput="calcVol()"></div>
+      <div class="vrow"><span class="vlbl" style="font-weight:800">Total</span><span class="vunit">mls</span><input type="number" class="vinput calc" id="f-vtotal" placeholder="0" readonly></div>
+      <hr class="divline">
+      <div class="vrow"><span class="vlbl">Less Irrigation</span><span class="vunit">mls</span><input type="number" class="vinput" id="f-virrig" placeholder="0" oninput="calcVol()"></div>
+      <div class="vrow"><span class="vlbl red" style="font-weight:800">Est Blood Loss to CS</span><span class="vunit">mls</span><input type="number" class="vinput calc" id="f-vebl" placeholder="0" readonly></div>
+      <div class="vrow"><span class="vlbl red" style="font-weight:800">RBC Returned</span><span class="vunit">mls</span><input type="number" class="vinput" id="f-vrbc" placeholder="0"></div>
+      <hr class="divline">
+      <div class="mini-lbl">Other</div>
+      <div class="vrow"><span class="vlbl">EBL on packs</span><span class="vunit">mls</span><input type="number" class="vinput" id="f-veblp" placeholder="0"></div>
+      <div class="vrow"><span class="vlbl">EBL to discard</span><span class="vunit">mls</span><input type="number" class="vinput" id="f-vebld" placeholder="0"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="dot"></span>Comments & Extras</div>
+    <div class="card-body">
+      <div class="field"><label class="lbl">Comments</label><textarea id="f-comments" placeholder="Any relevant clinical notes..."></textarea></div>
+      <div class="field"><label class="lbl">Extras</label><textarea id="f-extras" placeholder="Additional items..."></textarea></div>
+    </div>
+  </div>
+
+  <button class="btn btn-red" onclick="submitForm()">▶ Save Case Record</button>
+  <button class="btn btn-out" onclick="resetForm()">↺ Clear Form</button>
+</div>
+</div>
+
+<!-- HISTORY -->
+<div class="pane" id="pane-history">
+<div class="wrap" id="histList"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="pane" id="pane-settings">
+<div class="wrap">
+
+  <div class="sset card">
+    <div class="card-head"><span class="dot"></span>Google Sheets Integration</div>
+    <div class="srow2">
+      <span class="lbl2">Web App URL</span>
+      <input type="text" id="s-url" placeholder="https://script.google.com/macros/s/...">
+      <div class="hint">
+        <strong>One-time setup:</strong><br>
+        1. Open your Google Sheet &rarr; Extensions &rarr; Apps Script<br>
+        2. Delete any existing code, paste the script below, click Save (&#x1F4BE;)<br>
+        3. Deploy &rarr; New Deployment &rarr; Web App<br>
+        4. "Execute as" = <strong>Me</strong> &nbsp;|&nbsp; "Who has access" = <strong>Anyone</strong><br>
+        5. Click Deploy &rarr; copy the URL &rarr; paste above<br><br>
+        <strong>&#9888;&#65039; To test manually inside Apps Script editor:</strong><br>
+        Select <strong>testDoPost</strong> from the function dropdown (not doPost), then click Run.<br><br>
+        <strong>Apps Script code:</strong>
+        <code class="code" id="scriptCode"></code>
+      </div>
+      <button class="btn btn-grn" style="margin-top:12px;padding:11px" onclick="saveSettings()">&#x1F4BE; Save URL</button>
+    </div>
+    <div class="srow2">
+      <div class="sbadge"><span class="sdot" id="sdot"></span><span id="sstatus">Not configured</span></div>
+      <button class="btn btn-out" style="margin-top:10px" onclick="testSheets()">&#x1F9EA; Test Connection</button>
+    </div>
+  </div>
+
+  <div class="sset card">
+    <div class="card-head"><span class="dot"></span>Default Values</div>
+    <div class="srow2"><span class="lbl2">Default Hospital</span><input type="text" id="s-defhosp" placeholder="e.g. Royal Melbourne Hospital"></div>
+    <div class="srow2"><span class="lbl2">Default Operator</span><input type="text" id="s-defop" placeholder="Your name"></div>
+    <div class="srow2"><span class="lbl2">Default Anticoagulant</span><input type="text" id="s-defac" placeholder="e.g. ACD-A"></div>
+    <div class="srow2"><button class="btn btn-out" onclick="saveDefaults()">Save Defaults</button></div>
+  </div>
+
+  <div class="sset card">
+    <div class="card-head"><span class="dot"></span>Data Management</div>
+    <div class="srow2">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:10px" id="storStat">Loading...</div>
+      <button class="btn btn-out" onclick="exportCSV()">&#x2B07; Export All as CSV</button>
+      <button class="btn btn-out" style="color:var(--red);border-color:#f0c0c0;margin-top:8px" onclick="clearAll()">&#x1F5D1; Clear All Cases</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Case Saved &#x2713;</h2>
+    <div class="cid" id="m-cid"></div>
+    <div id="m-summary"></div>
+    <div style="display:grid;gap:8px;margin-top:16px">
+      <button class="btn btn-grn" onclick="doExportPDF()">&#x1F4C4; Save as PDF</button>
+      <button class="btn btn-blu" id="m-sheetsBtn" onclick="sendToSheets()" style="display:none">&#x1F4CA; Send to Google Sheets</button>
+      <button class="btn btn-blk" onclick="closeModal();resetForm()">&#x2713; Done &mdash; New Case</button>
+      <button class="btn btn-out" onclick="closeModal()">&#x2190; Back to Form</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+
+// --- State -------------------------------------------------------------------
+var current = null;
+
+// --- Boot --------------------------------------------------------------------
+document.getElementById('f-date').valueAsDate = new Date();
+loadSettings();
+loadDefaults();
+updateStorStat();
+buildScriptCode();
+
+// --- Tabs ---------------------------------------------------------------------
+function switchTab(name) {
+  var names = ['form','history','settings'];
+  var tabs = document.querySelectorAll('.tab');
+  var panes = document.querySelectorAll('.pane');
+  for (var i = 0; i < names.length; i++) {
+    tabs[i].classList.toggle('active', names[i] === name);
+    panes[i].classList.toggle('active', names[i] === name);
+  }
+  if (name === 'history') renderHistory();
+  if (name === 'settings') updateStorStat();
+}
+
+// --- Form helpers -------------------------------------------------------------
+function setGender(g) {
+  document.getElementById('f-gender').value = g;
+  var btns = document.querySelectorAll('.gbtn');
+  btns[0].classList.toggle('active', g === 'M');
+  btns[1].classList.toggle('active', g === 'F');
+  btns[2].classList.toggle('active', g === 'Other');
+  updateProg();
+}
+
+function calcTime() {
+  var s = document.getElementById('f-start').value;
+  var f = document.getElementById('f-finish').value;
+  if (!s || !f) return;
+  var sm = parseInt(s.split(':')[0])*60 + parseInt(s.split(':')[1]);
+  var fm = parseInt(f.split(':')[0])*60 + parseInt(f.split(':')[1]);
+  var diff = fm - sm; if (diff < 0) diff += 1440;
+  document.getElementById('f-total').textContent = Math.floor(diff/60) + 'h ' + (diff%60) + 'min';
+  updateProg();
+}
+
+function calcVol() {
+  var c = parseFloat(document.getElementById('f-vcoll').value) || 0;
+  var a = parseFloat(document.getElementById('f-vanticoag').value) || 0;
+  var i = parseFloat(document.getElementById('f-virrig').value) || 0;
+  var t = c - a, e = t - i;
+  document.getElementById('f-vtotal').value = t >= 0 ? t : '';
+  document.getElementById('f-vebl').value   = e >= 0 ? e : '';
+  updateProg();
+}
+
+function gv(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function updateProg() {
+  var ids = ['f-date','f-hospital','f-operator','f-surgeon','f-procedure','f-age','f-gender','f-start','f-finish','f-cstype','f-vcoll','f-vrbc'];
+  var n = 0;
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el && el.value.trim()) n++;
+  }
+  document.getElementById('progFill').style.width = Math.round(n/ids.length*100) + '%';
+}
+
+var allInputs = document.querySelectorAll('#pane-form input:not([type=hidden]), #pane-form textarea');
+for (var i = 0; i < allInputs.length; i++) {
+  allInputs[i].addEventListener('input', updateProg);
+}
+
+// --- Collect ------------------------------------------------------------------
+function collect() {
+  return {
+    caseId:       current ? current.caseId : ('CSR-' + Date.now().toString().slice(-6)),
+    date:         gv('f-date'),
+    theatre:      gv('f-theatre'),
+    hospital:     gv('f-hospital'),
+    operator:     gv('f-operator'),
+    surgeon:      gv('f-surgeon'),
+    anaesthetist: gv('f-anaesthetist'),
+    procedure:    gv('f-procedure'),
+    allergy:      gv('f-allergy'),
+    age:          gv('f-age'),
+    weight:       gv('f-weight'),
+    gender:       gv('f-gender'),
+    start:        gv('f-start'),
+    finish:       gv('f-finish'),
+    totalTime:    document.getElementById('f-total').textContent,
+    cellsaverType: gv('f-cstype'),
+    machineNo:    gv('f-machno'),
+    anticoagulant: gv('f-anticoag'),
+    preopHB:      gv('f-preopHB'),
+    intraopHB:    gv('f-intraopHB'),
+    bloodFilter:  gv('f-filter'),
+    notReturned:  document.getElementById('f-notret').checked ? 'Yes' : 'No',
+    volCollected: gv('f-vcoll'),
+    volAnticoag:  gv('f-vanticoag'),
+    volTotal:     document.getElementById('f-vtotal').value || '',
+    volIrrigation: gv('f-virrig'),
+    volEBL:       document.getElementById('f-vebl').value || '',
+    volRBC:       gv('f-vrbc'),
+    volEBLPacks:  gv('f-veblp'),
+    volEBLDiscard: gv('f-vebld'),
+    comments:     gv('f-comments'),
+    extras:       gv('f-extras'),
+    savedAt:      new Date().toISOString()
+  };
+}
+
+// --- Submit -------------------------------------------------------------------
+function submitForm() {
+  if (!gv('f-date') || !gv('f-hospital') || !gv('f-operator') || !gv('f-procedure')) {
+    showToast('Please fill: Date, Hospital, Operator, Procedure'); return;
+  }
+  var d = collect();
+  current = d;
+  var cases = JSON.parse(localStorage.getItem('csr') || '[]');
+  cases.unshift(d);
+  localStorage.setItem('csr', JSON.stringify(cases));
+
+  document.getElementById('m-cid').textContent = d.caseId + '  .  ' + d.date;
+
+  var rows = [
+    ['Hospital', d.hospital], ['Operator', d.operator], ['Surgeon', d.surgeon],
+    ['Procedure', d.procedure], ['Age / Gender', d.age + ' yrs . ' + d.gender],
+    ['Weight', d.weight ? d.weight + ' kg' : null],
+    ['Timing', d.start + ' -> ' + d.finish], ['Total Time', d.totalTime],
+    ['Cellsaver', d.cellsaverType], ['Anticoagulant', d.anticoagulant],
+    ['Preop HB', d.preopHB ? d.preopHB + ' g/L' : null],
+    ['Vol Collected', d.volCollected ? d.volCollected + ' mls' : null],
+    ['Total', d.volTotal ? d.volTotal + ' mls' : null],
+    ['Est Blood Loss to CS', d.volEBL ? d.volEBL + ' mls' : null, true],
+    ['RBC Returned', d.volRBC ? d.volRBC + ' mls' : null, true]
+  ];
+  var html = '';
+  for (var i = 0; i < rows.length; i++) {
+    if (!rows[i][1]) continue;
+    html += '<div class="srow"><span class="sl">' + rows[i][0] + '</span>' +
+            '<span class="sv' + (rows[i][2] ? ' red' : '') + '">' + rows[i][1] + '</span></div>';
+  }
+  document.getElementById('m-summary').innerHTML = html;
+
+  var url = localStorage.getItem('csr_url');
+  document.getElementById('m-sheetsBtn').style.display = url ? 'block' : 'none';
+  document.getElementById('overlay').classList.add('open');
+  updateStorStat();
+}
+
+// --- PDF export ---------------------------------------------------------------
+function doExportPDF() {
+  var d = current;
+  if (!d) return;
+
+  var css = [
+    '* { box-sizing:border-box; margin:0; padding:0; }',
+    'body { font-family:Arial,sans-serif; font-size:12px; color:#111; background:#fff; padding:10mm; }',
+    '.hdr { background:#0d0d0d; color:#fff; padding:12px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }',
+    '.hdr h1 { font-size:15px; letter-spacing:1px; }',
+    '.hdr .right { text-align:right; font-size:12px; color:#c0001a; font-weight:bold; }',
+    '.hdr .sub { font-size:9px; color:#aaa; margin-top:2px; }',
+    '.redbar { height:3px; background:#c0001a; margin-bottom:10px; }',
+    '.sec { margin-bottom:10px; page-break-inside:avoid; }',
+    '.sec-t { background:#eee; padding:4px 8px; font-size:10px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; color:#c0001a; margin-bottom:6px; }',
+    '.grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; padding:0 8px; }',
+    '.grid1 { grid-template-columns:1fr; }',
+    '.f { margin-bottom:4px; }',
+    '.f .lb { font-size:9px; color:#888; text-transform:uppercase; letter-spacing:0.5px; }',
+    '.f .vl { font-size:12px; font-weight:600; border-bottom:1px solid #ddd; padding-bottom:2px; min-height:16px; }',
+    '.hibox { background:#fff0f2; border-left:3px solid #c0001a; padding:8px 12px; margin:6px 8px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }',
+    '.hibox .lb { font-size:9px; color:#888; text-transform:uppercase; }',
+    '.hibox .vl { font-size:16px; font-weight:800; }',
+    '.hibox .vl.r { color:#c0001a; }',
+    '.hibox .vl.g { color:#1a6b3a; }',
+    '.ftr { margin-top:14px; border-top:1px solid #ddd; padding-top:8px; font-size:9px; color:#999; display:flex; justify-content:space-between; }',
+    '@media print { @page { margin:8mm; size:A4; } }'
+  ].join('\n');
+
+  function row(lb, vl) {
+    return '<div class="f"><div class="lb">' + lb + '</div><div class="vl">' + (vl || '-') + '</div></div>';
+  }
+
+  var body = [
+    '<div class="hdr">',
+    '  <div><h1>CELL SAVING RESOURCES</h1><div class="sub">BLOOD PROCESSING FORM . M25B</div></div>',
+    '  <div class="right">' + d.caseId + '<br><span style="color:#aaa;font-size:10px">' + d.date + '</span></div>',
+    '</div>',
+    '<div class="redbar"></div>',
+
+    '<div class="sec"><div class="sec-t">Case Information</div><div class="grid">',
+    row('Date', d.date), row('Theatre', d.theatre),
+    row('Operator', d.operator), row('Surgeon', d.surgeon),
+    row('Anaesthetist', d.anaesthetist), row('Allergy', d.allergy),
+    '</div><div class="grid grid1" style="margin-top:4px">',
+    row('Procedure', d.procedure),
+    '</div></div>',
+
+    '<div class="sec"><div class="sec-t">Patient</div><div class="grid">',
+    row('Age', d.age ? d.age + ' yrs' : '-'), row('Weight', d.weight ? d.weight + ' kg' : '-'),
+    row('Gender', d.gender),
+    '</div></div>',
+
+    '<div class="sec"><div class="sec-t">Timing</div><div class="grid">',
+    row('Start', d.start), row('Finish', d.finish), row('Total Time', d.totalTime),
+    '</div></div>',
+
+    '<div class="sec"><div class="sec-t">Equipment</div><div class="grid">',
+    row('Cellsaver Type', d.cellsaverType), row('Machine No.', d.machineNo),
+    row('Anticoagulant', d.anticoagulant), row('Blood Filter', d.bloodFilter),
+    row('Preop HB (g/L)', d.preopHB), row('Intraop HB (g/L)', d.intraopHB),
+    row('Salvaged Blood NOT Returned', d.notReturned),
+    '</div></div>',
+
+    '<div class="sec"><div class="sec-t">Blood Processing Record</div><div class="grid">',
+    row('Volume Collected', d.volCollected ? d.volCollected + ' mls' : '-'),
+    row('Less Anticoagulant', d.volAnticoag ? d.volAnticoag + ' mls' : '-'),
+    row('Total', d.volTotal ? d.volTotal + ' mls' : '-'),
+    row('Less Irrigation', d.volIrrigation ? d.volIrrigation + ' mls' : '-'),
+    '</div>',
+    '<div class="hibox">',
+    '  <div><div class="lb">Est Blood Loss to CS</div><div class="vl r">' + (d.volEBL || '-') + ' mls</div></div>',
+    '  <div><div class="lb">RBC Returned</div><div class="vl g">' + (d.volRBC || '-') + ' mls</div></div>',
+    '</div>',
+    '<div class="grid" style="margin-top:4px">',
+    row('EBL on packs', d.volEBLPacks ? d.volEBLPacks + ' mls' : '-'),
+    row('EBL to discard', d.volEBLDiscard ? d.volEBLDiscard + ' mls' : '-'),
+    '</div></div>',
+
+    (d.comments || d.extras) ? (
+      '<div class="sec"><div class="sec-t">Comments & Extras</div><div class="grid grid1">' +
+      row('Comments', d.comments || '-') +
+      row('Extras', d.extras || '-') +
+      '</div></div>'
+    ) : '',
+
+    '<div class="ftr">',
+    '  <span>cellsavingresources@gmail.com . 0433 020 555</span>',
+    '  <span>Generated: ' + new Date().toLocaleString() + '</span>',
+    '</div>'
+  ].join('\n');
+
+  var full = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CSR_' + d.caseId + '</title>' +
+             '<style>' + css + '</style></head><body>' + body +
+             '<scr'+'ipt>setTimeout(function(){window.print();},500);<\/scr'+'ipt>' +
+             '</body></html>';
+
+  var blob = new Blob([full], { type: 'text/html' });
+  var url  = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
+// --- Google Sheets ------------------------------------------------------------
+function sendToSheets() {
+  var url = localStorage.getItem('csr_url');
+  if (!url) { showToast('No Sheets URL in Settings'); return; }
+  var btn = document.getElementById('m-sheetsBtn');
+  btn.textContent = 'Loading Sending...'; btn.disabled = true;
+  fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(current) })
+    .then(function() {
+      showToast('Sent to Google Sheets OK');
+      btn.textContent = 'OK Sent'; btn.style.background = '#555';
+    })
+    .catch(function(err) {
+      showToast('Error - check URL in Settings');
+      btn.textContent = ' Retry'; btn.disabled = false;
+    });
+}
+
+function testSheets() {
+  var url = localStorage.getItem('csr_url');
+  if (!url) { showToast('Paste and save a URL first'); return; }
+  showToast('Sending test row...');
+  var test = { caseId:'TEST-000', date: new Date().toISOString().slice(0,10),
+    hospital:'Test Hospital', operator:'Test Operator',
+    procedure:'Connection test', savedAt: new Date().toISOString() };
+  fetch(url, { method:'POST', mode:'no-cors', body: JSON.stringify(test) })
+    .then(function() { showToast('Test sent! Check your Google Sheet OK'); })
+    .catch(function() { showToast('Failed - check the URL'); });
+}
+
+// --- Modal --------------------------------------------------------------------
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+
+// --- Reset --------------------------------------------------------------------
+function resetForm() {
+  var inputs = document.querySelectorAll('#pane-form input:not([type=hidden]):not([type=checkbox]), #pane-form textarea');
+  for (var i = 0; i < inputs.length; i++) inputs[i].value = '';
+  document.getElementById('f-notret').checked = false;
+  document.getElementById('f-gender').value = '';
+  var btns = document.querySelectorAll('.gbtn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  document.getElementById('f-total').textContent = '-';
+  document.getElementById('f-date').valueAsDate = new Date();
+  document.getElementById('progFill').style.width = '0%';
+  current = null;
+  loadDefaults();
+}
+
+// --- History ------------------------------------------------------------------
+function renderHistory() {
+  var cases = JSON.parse(localStorage.getItem('csr') || '[]');
+  var el = document.getElementById('histList');
+  if (!cases.length) {
+    el.innerHTML = '<div class="hempty"><div style="font-size:40px;margin-bottom:12px"></div>No saved cases yet.</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < cases.length; i++) {
+    var c = cases[i];
+    html += '<div class="hcard">' +
+      '<div class="hcard-head"><span class="hcard-id">' + c.caseId + '</span><span class="hcard-date">' + c.date + '</span></div>' +
+      '<div class="hcard-body">' +
+      '<div class="hr"><span class="hl">Hospital</span><span class="hv">' + (c.hospital||'-') + '</span></div>' +
+      '<div class="hr"><span class="hl">Operator</span><span class="hv">' + (c.operator||'-') + '</span></div>' +
+      '<div class="hr"><span class="hl">Procedure</span><span class="hv">' + (c.procedure||'-').substring(0,30) + '</span></div>' +
+      '<div class="hr"><span class="hl">Est Blood Loss</span><span class="hv" style="color:var(--red)">' + (c.volEBL ? c.volEBL+' mls' : '-') + '</span></div>' +
+      '<div class="hr"><span class="hl">RBC Returned</span><span class="hv" style="color:var(--green)">' + (c.volRBC ? c.volRBC+' mls' : '-') + '</span></div>' +
+      '</div>' +
+      '<div class="hcard-foot">' +
+      '<button class="hbtn" onclick="pdfCase(' + i + ')"> PDF</button>' +
+      '<button class="hbtn del" onclick="delCase(' + i + ')"> Delete</button>' +
+      '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function pdfCase(i) {
+  var cases = JSON.parse(localStorage.getItem('csr') || '[]');
+  current = cases[i];
+  doExportPDF();
+}
+
+function delCase(i) {
+  if (!confirm('Delete this case?')) return;
+  var cases = JSON.parse(localStorage.getItem('csr') || '[]');
+  cases.splice(i, 1);
+  localStorage.setItem('csr', JSON.stringify(cases));
+  renderHistory(); updateStorStat(); showToast('Case deleted');
+}
+
+// --- Settings -----------------------------------------------------------------
+function loadSettings() {
+  var url = localStorage.getItem('csr_url') || '';
+  document.getElementById('s-url').value = url;
+  setDot(!!url);
+}
+
+function loadDefaults() {
+  var dh = localStorage.getItem('csr_dh') || '';
+  var dop = localStorage.getItem('csr_dop') || '';
+  var da = localStorage.getItem('csr_da') || '';
+  document.getElementById('s-defhosp').value = dh;
+  document.getElementById('s-defop').value   = dop;
+  document.getElementById('s-defac').value   = da;
+  if (dh)  document.getElementById('f-hospital').value  = dh;
+  if (dop) document.getElementById('f-operator').value  = dop;
+  if (da)  document.getElementById('f-anticoag').value  = da;
+}
+
+function saveSettings() {
+  var url = document.getElementById('s-url').value.trim();
+  localStorage.setItem('csr_url', url);
+  setDot(!!url);
+  showToast(url ? 'URL saved OK  -  tap Test to verify' : 'URL cleared');
+}
+
+function saveDefaults() {
+  localStorage.setItem('csr_dh',  document.getElementById('s-defhosp').value.trim());
+  localStorage.setItem('csr_dop', document.getElementById('s-defop').value.trim());
+  localStorage.setItem('csr_da',  document.getElementById('s-defac').value.trim());
+  showToast('Defaults saved OK');
+}
+
+function setDot(ok) {
+  document.getElementById('sdot').className = 'sdot' + (ok ? ' ok' : '');
+  document.getElementById('sstatus').textContent = ok ? 'URL configured - tap Test to verify' : 'Not configured';
+}
+
+function updateStorStat() {
+  var n = JSON.parse(localStorage.getItem('csr') || '[]').length;
+  var el = document.getElementById('storStat');
+  if (el) el.textContent = n + ' case' + (n === 1 ? '' : 's') + ' saved on this device';
+}
+
+function exportCSV() {
+  var cases = JSON.parse(localStorage.getItem('csr') || '[]');
+  if (!cases.length) { showToast('No cases to export'); return; }
+  var keys = Object.keys(cases[0]);
+  var rows = [keys.join(',')];
+  for (var i = 0; i < cases.length; i++) {
+    var c = cases[i];
+    rows.push(keys.map(function(k){ return '"' + (c[k]||'').toString().replace(/"/g,'""') + '"'; }).join(','));
+  }
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([rows.join('\n')], { type:'text/csv' }));
+  a.download = 'CSR_Cases_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('CSV exported OK');
+}
+
+function clearAll() {
+  var n = JSON.parse(localStorage.getItem('csr') || '[]').length;
+  if (!confirm('Delete all ' + n + ' saved cases? Cannot be undone.')) return;
+  localStorage.removeItem('csr');
+  updateStorStat(); showToast('All cases cleared');
+}
+
+// --- Toast --------------------------------------------------------------------
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// --- Build script code display (avoids backtick nesting issues) ---------------
+function buildScriptCode() {
+  var lines = [
+    'var EMAIL = "6964806@gmail.com";',
+    '',
+    'function doPost(e) {',
+    '  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();',
+    '  var d = JSON.parse(e.postData.contents);',
+    '  if (sheet.getLastRow() === 0) { sheet.appendRow(Object.keys(d)); }',
+    '  sheet.appendRow(Object.values(d));',
+    '  sendEmail(d);',
+    '  return ContentService.createTextOutput("ok");',
+    '}',
+    '',
+    '// To test manually: select testDoPost in the',
+    '// function dropdown, then click Run.',
+    '// Do NOT run doPost directly from the editor.',
+    'function testDoPost() {',
+    '  var fakeData = {',
+    '    caseId:"TEST-001", date:"2026-04-16", theatre:"2",',
+    '    hospital:"Royal Melbourne Hospital",',
+    '    operator:"B. Gutierrez", surgeon:"Mr. Anderson",',
+    '    anaesthetist:"Dr. Shaw", procedure:"Connection test",',
+    '    allergy:"None", age:"46", weight:"74", gender:"M",',
+    '    start:"12:30", finish:"16:00", totalTime:"3h 30min",',
+    '    cellsaverType:"Elite+", machineNo:"",',
+    '    anticoagulant:"ACD-A", preopHB:"120", intraopHB:"",',
+    '    bloodFilter:"X1", notReturned:"No",',
+    '    volCollected:"1300", volAnticoag:"700", volTotal:"600",',
+    '    volIrrigation:"100", volEBL:"500", volRBC:"250",',
+    '    volEBLPacks:"", volEBLDiscard:"", comments:"", extras:"",',
+    '    savedAt: new Date().toISOString()',
+    '  };',
+    '  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();',
+    '  if (sheet.getLastRow() === 0) { sheet.appendRow(Object.keys(fakeData)); }',
+    '  sheet.appendRow(Object.values(fakeData));',
+    '  sendEmail(fakeData);',
+    '  Logger.log("Test OK - check Sheet and email inbox");',
+    '}',
+    '',
+    'function sendEmail(d) {',
+    '  var subject = "CSR New Case - " + d.operator + " | " + d.date + " | " + d.hospital;',
+    '  var body =',
+    '    "NEW CASE SUBMITTED\\n==================\\n\\n" +',
+    '    "Case ID:    " + d.caseId + "\\n" +',
+    '    "Date:       " + d.date + "\\n" +',
+    '    "Theatre:    " + d.theatre + "\\n" +',
+    '    "Hospital:   " + d.hospital + "\\n" +',
+    '    "Operator:   " + d.operator + "\\n" +',
+    '    "Surgeon:    " + d.surgeon + "\\n" +',
+    '    "Procedure:  " + d.procedure + "\\n\\n" +',
+    '    "BLOOD PROCESSING\\n----------------\\n" +',
+    '    "Vol Collected:     " + (d.volCollected||"-") + " mls\\n" +',
+    '    "Less Anticoag:     " + (d.volAnticoag||"-") + " mls\\n" +',
+    '    "Total:             " + (d.volTotal||"-") + " mls\\n" +',
+    '    "Less Irrigation:   " + (d.volIrrigation||"-") + " mls\\n" +',
+    '    "Est Blood Loss CS: " + (d.volEBL||"-") + " mls\\n" +',
+    '    "RBC Returned:      " + (d.volRBC||"-") + " mls\\n\\n" +',
+    '    "Comments: " + (d.comments||"-") + "\\n" +',
+    '    "Submitted: " + d.savedAt;',
+    '  MailApp.sendEmail(EMAIL, subject, body);',
+    '}'
+  ];
+  document.getElementById('scriptCode').textContent = lines.join('\n');
+}
+
+
+</script>
+<script>
+
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(function(reg) { console.log("SW registered"); })
+      .catch(function(err) { console.log("SW error", err); });
+  });
+}
+
+
+</script>
+
+
+</body>
+</html>
